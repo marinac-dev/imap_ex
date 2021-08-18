@@ -6,10 +6,12 @@ Imap client library written in Elixir, with goal to be secure, fast and asyn.
 
 ## Roadmap:
 
-- [x] SSL base | Support only secure IMAP on port 993
-- [ ] IMAP Commands
+- [x] SSL base | Core and wrapper (support only IMAP secure on port 993)
+- [x] IMAP Commands
+- [ ] IMAP Mailbox | Local storage
+- [ ] Imap Mailbox | Command validation
 - [ ] IMAP response parser
-- [ ] IMAP connectio manager (GenServer)
+- [x] IMAP connection manager (GenServer)
 - [ ] High level API Client | User friendly
 
 ## Installation
