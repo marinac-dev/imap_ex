@@ -2,8 +2,18 @@ defmodule ImapEx.SSL.Socket do
   alias ImapEx.SSL.Core
 
   def init(host, port) when is_bitstring(host) and is_integer(port) do
+    # We want SSL to either start or break
     :ok = Core.start()
-    {:ok, socket} = Core.connect(host |> to_charlist, port)
+
+    host
+    |> to_charlist()
+    |> Core.connect(port)
+    |> handle_init()
+  end
+
+  defp handle_init({:error, reason}), do: {:error, reason}
+
+  defp handle_init({:ok, socket}) do
     {:ok, msg} = init_recv(socket)
     {socket, msg}
   end
