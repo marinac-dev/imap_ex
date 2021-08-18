@@ -29,15 +29,16 @@ defmodule ImapEx.SSL.Socket do
     :ok = Core.close(socket)
   end
 
-  def send(socket, data) when is_tuple(socket) and is_bitstring(data) do
-    case Core.send(socket, data) do
-      :ok ->
-        :ok
+  @doc """
+  Sends data to IMAP server
+  Takes socket and data/command (use Command module to request commands)
+  """
+  def send(socket, data) when is_tuple(socket) and is_bitstring(data),
+    do: socket |> Core.send(data) |> handle_send()
 
-      {:error, :closed} ->
-        {:error, "Connection is closed"}
-    end
-  end
+  def handle_send(:ok), do: :ok
+  def handle_send({:error, :closed}), do: {:error, "Connection is closed"}
+  def handle_send(any), do: {:error, any}
 
   @doc """
   Used when IMAP initializes connection with server (response up to 64kb)
