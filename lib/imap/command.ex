@@ -3,46 +3,43 @@ defmodule ImapEx.Imap.Command do
   IMAP commands in form of an struct.\n
   I strongly suggest that user of this lib reads [RFC3501 Client Commands, Section 6](https://tools.ietf.org/html/rfc3501#section-6)\n
   [Formal syntax](https://tools.ietf.org/html/rfc3501#section-9)
+  Submodules are strucutred in a way so that they "force" user to consciously select state
   """
-  defstruct tag: "S_TAG", instruction: nil
+  @type t :: %__MODULE__{
+          tag: number(),
+          command: struct(),
+          imap_string: String.t()
+        }
+  defstruct tag: 0, command: nil, imap_string: ""
 
   @sp " "
   @eol "\r\n"
+  @itag "I_TAG"
 
   @doc """
-  Creates IMAP-ready command from `%Imap.Command{}` sub-module structs (Any, NonAuth, Auth, Selected)\n
+  Creates IMAP-ready command from Command sub-modules (Any, NonAuth, Auth, Selected)\n
+
   Usage:
       iex(∞)> command = Imap.Command.Any.noop()
       %Imap.Command.Any{command: "NOOP", params: [], type: :noop}
       iex(∞)> Imap.Command.forge(command)
-      "S_TAG1 NOOP \\r\\n"
+      "I_TAG1 NOOP \\r\\n"
   """
-  def forge(command) do
-    command
-    |> structure()
-    |> join_all()
+  def forge(command, tag) do
+    %__MODULE__{
+      tag: tag(tag),
+      command: command,
+      imap_string: stringify(command, tag)
+    }
   end
 
-  defp structure(command) do
-    command
-    |> raw_params()
-    |> update_params()
-  end
+  defp stringify(%{command: command, params: params}, tag) when is_list(params) and is_integer(tag),
+    do: tag(tag) <> @sp <> command <> @sp <> Enum.join(params, " ") <> @eol
 
-  defp raw_params(command) do
-    Map.update!(command, :params, fn x ->
-      cond do
-        is_bitstring(x) -> x
-        is_list(x) -> Enum.join(x, " ")
-      end
-    end)
-  end
+  defp stringify(%{command: command, params: params}, tag) when is_bitstring(params) and is_integer(tag),
+    do: tag(tag) <> @sp <> command <> @sp <> params <> @eol
 
-  defp update_params(instruction),
-    do: Map.update!(%__MODULE__{}, :instruction, fn _ -> instruction end)
-
-  defp join_all(final),
-    do: final.tag <> @sp <> final.instruction.command <> @sp <> final.instruction.params <> @eol
+  defp tag(tag), do: "#{@itag}#{tag}"
 
   defmodule Any do
     @moduledoc """
@@ -72,14 +69,6 @@ defmodule ImapEx.Imap.Command do
     Client Commands - Not Authenticated State
     """
     defstruct command: nil, params: [], type: nil
-
-    @doc """
-    Not supported by lib (for now).\n
-    The [AUTHENTICATE](https://tools.ietf.org/html/rfc3501#section-6.2.2) command indicates a [SASL \[RFC4422\]](https://tools.ietf.org/html/rfc4422) authentication mechanism to the server
-    """
-    def authenticate(_auth_mechanism),
-      # do: %__MODULE__{command: "AUTHENTICATE", params: [auth_mechanism], type: :authenticate}
-      do: "Not supported by lib (for now)"
 
     @doc """
     The [LOGIN](https://tools.ietf.org/html/rfc3501#section-6.2.3) command identifies the client to the server and carries \n
