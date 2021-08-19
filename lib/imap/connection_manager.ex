@@ -20,13 +20,13 @@ defmodule ImapEx.Imap.ConnectionManager do
   # Function generate_name/0 is available for generating GS names
   # Name is registered with {:global, TERM} to avoid othervise dynamic atom allocation
 
-  def start(%{host: host, name: session_id}) when is_bitstring(host),
-    do: GenServer.start_link(__MODULE__, %{host: host, port: @ssl_port}, name: {:global, session_id})
+  def start(host) when is_bitstring(host),
+    do: GenServer.start_link(__MODULE__, %{host: host, port: @ssl_port})
 
   def init(%{host: host, port: port}) do
     case Socket.init(host, port) do
       {:error, message} ->
-        CompileError.exception(message)
+        raise(message)
 
       {socket, message} ->
         IO.inspect(message)
@@ -34,21 +34,13 @@ defmodule ImapEx.Imap.ConnectionManager do
     end
   end
 
-  def send(name, command) when is_map(command) do
-    gs_pid = get_gs_pid(name)
-
-    GenServer.call(gs_pid, command, @default_timeout)
-    # if Checker.is_request(request) do
-    # else
-    #   {:error, "Request is not structure."}
-    # end
+  def send(pid, command) do
+    # ! ToDo: Before making any IMAP requests check for command validity
+    GenServer.call(pid, command, @default_timeout)
   end
 
-  def handle_call(request, _, %{socket: socket, tag: tag} = state) do
-    request = %{request | tag: "S_TAG#{tag}"}
-
-    {:reply, process_call({socket, request}), %{state | tag: tag + 1}}
-  end
+  def handle_call(command, _from, %{socket: socket, tag: tag} = state),
+    do: {:reply, process_call({socket, command, tag + 1}), %{state | tag: tag + 1}}
 
   def handle_info(data, state) do
     IO.inspect(data, label: "Handle info ~> ")
@@ -66,12 +58,11 @@ defmodule ImapEx.Imap.ConnectionManager do
   def generate_name(), do: "GS_#{Base.url_encode64(:crypto.strong_rand_bytes(24), padding: false)}"
 
   # Helpers
-  defp get_gs_pid(name), do: GenServer.whereis(name)
 
-  defp process_call({socket, command}) do
-    command_imap = command |> Command.forge()
+  defp process_call({socket, command, tag}) do
+    command = command |> Command.forge(tag)
 
-    Socket.send(socket, command_imap)
-    Socket.recv(socket, command.tag)
+    Socket.send(socket, command.imap_string)
+    Socket.recv(socket, "I_TAG#{command.tag}")
   end
 end
