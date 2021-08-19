@@ -63,6 +63,6 @@ defmodule ImapEx.Imap.ConnectionManager do
     command = command |> Command.forge(tag)
 
     Socket.send(socket, command.imap_string)
-    Socket.recv(socket, "I_TAG#{command.tag}")
+    Socket.recv(socket)
   end
 end

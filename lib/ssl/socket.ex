@@ -59,7 +59,7 @@ defmodule ImapEx.SSL.Socket do
   Recieve data from socket until the end of IMAP response is reached.
   """
 
-  def recv(socket, tag) when is_integer(tag), do: recv(socket, "")
+  def recv(socket), do: recv(socket, "")
 
   def recv(socket, data),
     do: socket |> Core.recv() |> handle_recv(socket, data)
@@ -69,9 +69,11 @@ defmodule ImapEx.SSL.Socket do
 
   defp handle_recv({:error, reason}, _s, _d), do: raise(reason)
 
-  defp handle_recv("\n\r" <> reversed = _new, _socket, data), do: data <> reverse(reversed)
+  defp handle_recv("\n\r" <> reversed = _new, _socket, data),
+    do: data <> reverse(reversed)
 
   defp handle_recv(new, socket, data), do: recv(socket, data <> new)
 
-  defp reverse(data), do: data |> :binary.decode_unsigned(:little) |> :binary.encode_unsigned(:big)
+  defp reverse(data),
+    do: data |> :binary.decode_unsigned(:little) |> :binary.encode_unsigned(:big)
 end
