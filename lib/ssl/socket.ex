@@ -61,7 +61,7 @@ defmodule ImapEx.SSL.Socket do
 
   def recv(socket), do: recv(socket, "")
 
-  def recv(socket, data),
+  defp recv(socket, data),
     do: socket |> Core.recv() |> handle_recv(socket, data)
 
   defp handle_recv({:ok, new}, socket, data),
