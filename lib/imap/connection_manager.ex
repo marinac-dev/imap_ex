@@ -14,12 +14,6 @@ defmodule ImapEx.Imap.ConnectionManager do
   # Default timeout is 15 seconds
   @default_timeout 15_000
 
-  # Session name reffers to some user session
-  # If 10 users are accessing library at the same time
-  # Library SHOULD create 10 GenServers with name as user session identifier
-  # Function generate_name/0 is available for generating GS names
-  # Name is registered with {:global, TERM} to avoid othervise dynamic atom allocation
-
   def start(host) when is_bitstring(host),
     do: GenServer.start_link(__MODULE__, %{host: host, port: @ssl_port})
 
@@ -48,7 +42,7 @@ defmodule ImapEx.Imap.ConnectionManager do
   end
 
   def stop(pid) do
-    Socket.send(pid, Command.Any.logout())
+    __MODULE__.send(pid, Command.Any.logout()) |> IO.inspect()
     Agent.stop(pid)
   end
 
