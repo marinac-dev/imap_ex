@@ -28,7 +28,7 @@ defmodule ImapEx.SSL.Core do
   Default len is 0 = `as much as possible`.
   Size is in bytes.
   """
-  def recv(socket, len \\ 0, timeout \\ 30_000) when is_tuple(socket) and is_integer(len),
+  def recv(socket, len \\ 0, timeout \\ 5_000) when is_tuple(socket) and is_integer(len),
     do: :ssl.recv(socket, len, timeout)
 
   @doc """
