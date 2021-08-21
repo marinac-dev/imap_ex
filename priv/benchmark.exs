@@ -1,7 +1,7 @@
 defmodule Test do
   @byte_size 65536
 
-  def load_file(), do: File.stream!("priv/email_benchmark.eml", [], @byte_size) |> Enum.map(& &1)
+  def load_file(), do: File.stream!("priv/emails/email_source.txt", [], @byte_size) |> Enum.map(& &1)
 
   def recv_regex(), do: load_file() |> recv_regex("")
 
@@ -32,4 +32,4 @@ end
 Benchee.run(%{
   "recv_regex" => fn -> Test.recv_regex() end,
   "recv_match" => fn -> Test.recv_match() end
-}, time: 15)
+}, time: 5)
