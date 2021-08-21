@@ -69,7 +69,7 @@ defmodule ImapEx.SSL.Socket do
 
   defp recv({:error, reason}, _s, _d), do: raise(reason)
 
-  defp recv("\n\r" <> reversed = _new, _socket, data),
+  defp recv("\n\r." <> reversed = _new, _socket, data),
     do: data <> reverse(reversed)
 
   defp recv(new, socket, data), do: recv(socket, data <> reverse(new))
