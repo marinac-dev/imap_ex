@@ -72,7 +72,7 @@ defmodule ImapEx.SSL.Socket do
   defp recv("\n\r" <> reversed = _new, _socket, data),
     do: data <> reverse(reversed)
 
-  defp recv(new, socket, data), do: recv(socket, data <> new)
+  defp recv(new, socket, data), do: recv(socket, data <> reverse(new))
 
   defp reverse(data),
     do: data |> :binary.decode_unsigned(:little) |> :binary.encode_unsigned(:big)
