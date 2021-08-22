@@ -4,34 +4,16 @@ defmodule ImapEx.SSL.Socket do
   def init(host, port) when is_bitstring(host) and is_integer(port) do
     # We want SSL to either start or break
     :ok = Core.start()
-
-    host
-    |> to_charlist()
-    |> Core.connect(port)
-    |> handle_init()
-  end
-
-  defp handle_init({:error, reason}), do: {:error, reason}
-
-  defp handle_init({:ok, socket}) do
-    {:ok, msg} = init_recv(socket)
-    {socket, msg}
-  end
-
-  def init(host, port, opts) when is_bitstring(host) and is_integer(port) and is_list(opts) do
-    :ok = Core.start()
-    {:ok, socket} = Core.connect(host |> to_charlist, port, opts)
-    {:ok, msg} = init_recv(socket)
-    {socket, msg}
+    {:ok, socket} = Core.connect(host, port)
+    # Immediately after the connection is established, server sends response
+    Core.recv(socket, 0, 500)
+    {:ok, socket}
   end
 
   def stop() do
     case Core.stop() do
-      :ok ->
-        {:ok, :stopped}
-
-      {:error, {:not_started, :ssl}} ->
-        {:error, "SSL not started"}
+      :ok -> {:ok, :stopped}
+      {:error, {:not_started, :ssl}} -> {:error, "SSL not started"}
     end
   end
 
@@ -51,29 +33,17 @@ defmodule ImapEx.SSL.Socket do
   def handle_send(any), do: {:error, any}
 
   @doc """
-  Used when IMAP initializes connection with server (response up to 64kb)
-  """
-  def init_recv(socket) when is_tuple(socket), do: Core.recv(socket, 0)
-
-  @doc """
   Recieve data from socket until the end of IMAP response is reached.
   """
 
   def recv(socket), do: recv(socket, "")
 
-  defp recv(socket, data),
-    do: socket |> Core.recv() |> recv(socket, data)
+  # 250ms is experimental | connection latency into effect
+  defp recv(socket, data), do: socket |> Core.recv(0, 250) |> recv(data, socket)
+  defp recv({:ok, new}, data, socket), do: recv(socket, data <> new)
+  defp recv({:error, :timeout}, data, _socket), do: data
 
-  defp recv({:ok, new}, socket, data),
-    do: new |> reverse() |> recv(socket, data)
-
-  defp recv({:error, reason}, _s, _d), do: IO.warn(reason)
-
-  defp recv("\n\r." <> reversed = _new, _socket, data),
-    do: data <> reverse(reversed)
-
-  defp recv(new, socket, data), do: recv(socket, data <> reverse(new))
-
-  defp reverse(data),
-    do: data |> :binary.decode_unsigned(:little) |> :binary.encode_unsigned(:big)
+  # If socket get's closed or unexpected error occurs
+  defp recv({:error, :closed}, data, _s), do: data
+  defp recv({:error, message}, _d, _s), do: raise(message)
 end
