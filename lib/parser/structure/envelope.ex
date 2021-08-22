@@ -33,12 +33,12 @@ defmodule Envelope do
   end
 
   defp parse_nstring({data, res}, key), do: data |> Utils.parse_nstring() |> parse_nstring(res, key)
-  defp parse_nstring({value, " " <> rest}, res, key), do: {rest, Map.put(res, key, value)}
-  defp parse_nstring({value, rest}, res, key), do: {rest, Map.put(res, key, value)}
+  defp parse_nstring({value, " " <> rest}, res, key), do: {rest, %{res | key => value}}
+  defp parse_nstring({value, rest}, res, key), do: {rest, %{res | key => value}}
 
   defp parse_naddress_list({data, res}, key), do: data |> parse_naddress_list() |> parse_naddress_list(res, key)
-  defp parse_naddress_list({value, " " <> rest}, res, key), do: {rest, Map.put(res, key, value)}
-  defp parse_naddress_list({value, rest}, res, key), do: {rest, Map.put(res, key, value)}
+  defp parse_naddress_list({value, " " <> rest}, res, key), do: {rest, %{res | key => value}}
+  defp parse_naddress_list({value, rest}, res, key), do: {rest, %{res | key => value}}
 
   defp parse_naddress_list("NIL" <> rest), do: {"NIL", rest}
   defp parse_naddress_list("(" <> rest), do: parse_address_list(rest, [])
