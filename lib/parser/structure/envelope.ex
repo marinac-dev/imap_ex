@@ -1,4 +1,4 @@
-defmodule Envelope do
+defmodule ImapEx.Parser.Structure.Envelope do
   @type t :: %__MODULE__{
           date: String.t(),
           subject: String.t(),
@@ -47,13 +47,9 @@ defmodule Envelope do
 
   defp parse_address_list("(" <> rest, acc) do
     {name, rest} = Utils.parse_nstring(rest)
-    rest = String.trim_leading(rest, " ")
     {adl, rest} = Utils.parse_nstring(rest)
-    rest = String.trim_leading(rest, " ")
     {mailbox, rest} = Utils.parse_nstring(rest)
-    rest = String.trim_leading(rest, " ")
     {host, rest} = Utils.parse_nstring(rest)
-    rest = String.trim_leading(rest, " ")
 
     ")" <> rest = rest
     addr = %{name: name, adl: adl, mailbox: mailbox, host: host}
