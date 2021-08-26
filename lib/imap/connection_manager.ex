@@ -2,10 +2,12 @@ defmodule ImapEx.Imap.ConnectionManager do
   @moduledoc """
   Connection manager for communication with IMAP server
   """
+
   use GenServer
   alias ImapEx.SSL.Socket
   alias ImapEx.Imap.Command
 
+  # Default GenServer state
   @init_state %{socket: nil, tag: 1}
 
   # lib doesn't (at least I won't) support unsecure connection.
@@ -14,17 +16,21 @@ defmodule ImapEx.Imap.ConnectionManager do
   # Default timeout is 15 seconds
   @default_timeout 15_000
 
+  @doc """
+  Starts GenServer with user session. \n
+  Takes only one param, host url
+
+    Example:
+    iex(∞)> ConnectionManager.start("imap.gmail.com")
+    {:ok, #PID<>}
+  """
   def start(host) when is_bitstring(host),
-    do: GenServer.start_link(__MODULE__, %{host: host, port: @ssl_port})
+    do: GenServer.start(__MODULE__, %{host: host, port: @ssl_port})
 
   def init(%{host: host, port: port}) do
     case Socket.init(host, port) do
-      {:error, message} ->
-        raise(message)
-
-      {socket, message} ->
-        IO.inspect(message)
-        {:ok, %{@init_state | socket: socket}}
+      {:error, message} -> raise(message)
+      {:ok, socket} -> {:ok, %{@init_state | socket: socket}}
     end
   end
 
@@ -33,12 +39,8 @@ defmodule ImapEx.Imap.ConnectionManager do
     GenServer.call(pid, command, @default_timeout)
   end
 
-  def handle_call(command, _from, %{socket: socket, tag: tag} = state),
-    do: {:reply, process_call({socket, command, tag + 1}), %{state | tag: tag + 1}}
-
-  def handle_info(data, state) do
-    IO.inspect(data, label: "Handle info ~> ")
-    {:noreply, state}
+  def handle_call(command, _from, %{socket: socket, tag: tag} = state) do
+    {:reply, process_call({socket, command, tag + 1}), %{state | tag: tag + 1}}
   end
 
   def stop(pid) do
@@ -47,16 +49,16 @@ defmodule ImapEx.Imap.ConnectionManager do
   end
 
   @doc """
-  Returns 32 byte long url safe base64 encoded string
+  Returns 32 byte long url safe base64 encoded random string
   """
-  def generate_name(), do: "GS_#{Base.url_encode64(:crypto.strong_rand_bytes(24), padding: false)}"
+  def generate_str(), do: "GS_#{Base.url_encode64(:crypto.strong_rand_bytes(24), padding: false)}"
 
   # Helpers
 
   defp process_call({socket, command, tag}) do
-    command = command |> Command.forge(tag)
+    %{imap_string: imap_string} = Command.forge(command, tag)
 
-    Socket.send(socket, command.imap_string)
+    Socket.send(socket, imap_string)
     Socket.recv(socket)
   end
 end
