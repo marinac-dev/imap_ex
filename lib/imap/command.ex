@@ -136,7 +136,7 @@ defmodule ImapEx.Imap.Command do
     @doc """
     The [LIST](https://tools.ietf.org/html/rfc3501#section-6.3.8) command returns a subset of names from the complete set of all names available to the client.
     """
-    def list(reference_name, mailbox_name_or_wildcard),
+    def list(reference_name \\ "\"\"", mailbox_name_or_wildcard \\ "\"%\""),
       do: %__MODULE__{
         command: "LIST",
         params: [reference_name, mailbox_name_or_wildcard],
@@ -147,7 +147,7 @@ defmodule ImapEx.Imap.Command do
     The [LSUB](https://tools.ietf.org/html/rfc3501#section-6.3.9) command returns a subset of names from the set of names \n
     that the user has declared as being "active" or "subscribed".
     """
-    def lsub(reference_name, mailbox_name_or_wildcard),
+    def lsub(reference_name \\ "\"\"", mailbox_name_or_wildcard \\ "\"\""),
       do: %__MODULE__{
         command: "LSUB",
         params: [reference_name, mailbox_name_or_wildcard],
