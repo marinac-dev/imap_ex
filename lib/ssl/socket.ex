@@ -33,7 +33,8 @@ defmodule ImapEx.SSL.Socket do
   def handle_send(any), do: {:error, any}
 
   @doc """
-  Recieve data from socket until the end of IMAP response is reached.
+  Recieve data from socket until the end of IMAP response is reached.\n
+  Recv has 250ms timeout this is not an issue in cloud since cloud prowiders have god ISP and latency is low
   """
 
   def recv(socket), do: recv(socket, "")
