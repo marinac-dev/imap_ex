@@ -1,7 +1,21 @@
 defmodule ImapEx.Parser.Utils do
   # Thank you sgessa/eximap <3
 
+  def parse_number(rest) do
+    [val, sep, rest] = String.split(rest, ~r{\d+(?<non_digit>[^\d])}, on: [:non_digit], parts: 2, include_captures: true)
+
+    {val, sep <> rest}
+  end
+
+  def parse_nz_number(rest) do
+    case String.split(rest, ~r{[1-9]\d*(?<space>\s)}, on: [:space], parts: 2) do
+      [val, rest] -> {val, rest}
+      [val] -> {val, ""}
+    end
+  end
+
   def parse_nstring("NIL" <> data), do: {"NIL", data}
+  def parse_nstring(" " <> data), do: parse_string(data)
   def parse_nstring(data), do: parse_string(data)
 
   def parse_string("\"" <> _ = data), do: parse_quoted(data)
